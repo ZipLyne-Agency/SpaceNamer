@@ -1,0 +1,6 @@
+.DS_Store
+SpaceNamer-*.dmg
+build/
+dist/
+__pycache__/
+*.pyc

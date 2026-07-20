@@ -1,0 +1,121 @@
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><title>SpaceNamer Updates</title>
+    <item>
+      <title>Version 3.0.0</title>
+      <pubDate>Sat, 18 Jul 2026 22:43:47 +0000</pubDate>
+      <sparkle:version>202607190140</sparkle:version>
+      <sparkle:shortVersionString>3.0.0</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.0.0/SpaceNamer-3.0.0.dmg" sparkle:edSignature="L3RMvnFl28FiaP7RhW61kx+h9qm/ey0THe/y9EYMV6KyxWWTzBJmlpGKHBk1nVKpbUxY8VezFiNc+ltVEYLeCw==" length="3067755" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>Version 3.0.2</title>
+      <pubDate>Sat, 18 Jul 2026 23:06:35 +0000</pubDate>
+      <sparkle:version>202607182305</sparkle:version>
+      <sparkle:shortVersionString>3.0.2</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.0.2/SpaceNamer-3.0.2.dmg" sparkle:edSignature="ovzkPOT3NYdpHJLOeFhEgIbnwULfB71rJzqF7aIYqYLwoXzeVl2aZ7fKMXS0UyU1+RY02SIJeu182ezFhb7eCw==" length="3084597" type="application/octet-stream"/>
+    </item>
+    <item>
+      <title>Version 3.0.3</title>
+      <pubDate>Sat, 18 Jul 2026 23:12:46 +0000</pubDate>
+      <sparkle:version>202607182311</sparkle:version>
+      <sparkle:shortVersionString>3.0.3</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.0.3/SpaceNamer-3.0.3.dmg" sparkle:edSignature="YaPXSsiiMPALxgKGXExhunMiWbcgy9Fbj1Lf/WPj3QR6MivCII5V0C3xMDHBxgtclME0DBe2CrPw97IxpOg+Dw==" length="3084676" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.0.5</title>
+      <pubDate>Sun, 19 Jul 2026 07:12:48 +0000</pubDate>
+      <sparkle:version>202607190711</sparkle:version>
+      <sparkle:shortVersionString>3.0.5</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.0.5/SpaceNamer-3.0.5.dmg" sparkle:edSignature="kBSY+AhJer9FUlcyYeGcSkZTK0xw6KPmAPQPcCHSHB4qFnSstEmlgkdWGpJlXR9tZLyMZtrw35ozWA1Xn4pdAA==" length="3084453" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.6</title>
+      <pubDate>Sun, 19 Jul 2026 10:21:29 +0000</pubDate>
+      <sparkle:version>202607191018</sparkle:version>
+      <sparkle:shortVersionString>3.1.6</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.6/SpaceNamer-3.1.6.dmg" sparkle:edSignature="DC/pY04Fe6kui+IBhav0FMfESoTHRKDj1A5avqc8UJUpvc4mIvy3ndTj89gItW3TLzk46jkbzBpZ+aDrk6FkDQ==" length="2961548" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.7</title>
+      <pubDate>Sun, 19 Jul 2026 10:23:35 +0000</pubDate>
+      <sparkle:version>202607191022</sparkle:version>
+      <sparkle:shortVersionString>3.1.7</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.7/SpaceNamer-3.1.7.dmg" sparkle:edSignature="d2mDUdR9jke8dqieH6U5RRj5Yr0seiOkO9VNoL772H+HOPs2N5o1RqgqIflfQZNSg+mQ0g/qSnq5Zs3YaIoxDw==" length="2959538" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.8</title>
+      <pubDate>Sun, 19 Jul 2026 10:34:46 +0000</pubDate>
+      <sparkle:version>202607191033</sparkle:version>
+      <sparkle:shortVersionString>3.1.8</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.8/SpaceNamer-3.1.8.dmg" sparkle:edSignature="q3s0rXKr2JGyJ9AkjZrl+iAt0wy0moxjSUEkv3xxO9rGgMmEiqhRxW/Fj6VqEwwnCNLf5OtPBPdDr/e2ZBGDBA==" length="2955063" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.9</title>
+      <pubDate>Sun, 19 Jul 2026 11:19:31 +0000</pubDate>
+      <sparkle:version>202607191118</sparkle:version>
+      <sparkle:shortVersionString>3.1.9</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.9/SpaceNamer-3.1.9.dmg" sparkle:edSignature="zktQGCroOSATPJ3MDJJWpeD5O15BwPcFoZdl+fdeWtoR0sMXxYJc/NBYT6CneaP/rmtYBxUDIoToeCDRkyW6CA==" length="2953917" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.10</title>
+      <pubDate>Sun, 19 Jul 2026 11:35:32 +0000</pubDate>
+      <sparkle:version>202607191134</sparkle:version>
+      <sparkle:shortVersionString>3.1.10</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.10/SpaceNamer-3.1.10.dmg" sparkle:edSignature="+co7qkmdZngu0aLywsHttHzZxmGEXahZLkq1uKhBMsTW64wwkuFydlYrxRNb0IMyN3Ss0z+5xFFX14hR5umYBg==" length="2955944" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.11</title>
+      <pubDate>Sun, 19 Jul 2026 12:29:42 +0000</pubDate>
+      <sparkle:version>202607191228</sparkle:version>
+      <sparkle:shortVersionString>3.1.11</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.11/SpaceNamer-3.1.11.dmg" sparkle:edSignature="BX8RXV333ASkQ4pbwhgzt5QTi9tpqpZ6Nv164dwyahEIKX9cSxPxSe0EyrR+jK0O+4ZgeDk7aj8fN1TyltJ5DA==" length="2955834" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.12</title>
+      <pubDate>Sun, 19 Jul 2026 13:20:35 +0000</pubDate>
+      <sparkle:version>202607191319</sparkle:version>
+      <sparkle:shortVersionString>3.1.12</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.12/SpaceNamer-3.1.12.dmg" sparkle:edSignature="HwjG06beFImfP+hhcSlKGpIDz/OQz5pLLfp9DAaOy3BB0tPc0PC++fJvGiRmBaFyfY2LMEQQRbicFc1LzLJECg==" length="2955872" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.13</title>
+      <pubDate>Sun, 19 Jul 2026 14:25:47 +0000</pubDate>
+      <sparkle:version>202607191424</sparkle:version>
+      <sparkle:shortVersionString>3.1.13</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.13/SpaceNamer-3.1.13.dmg" sparkle:edSignature="k0gXo6+WOaOZkQ80Ze+qYKeeiMr9L04UoodkFuNR0VcXHvOepXE4rGWFj8P1n9ScZfa+79Y0K3csKQP4WU3ECg==" length="2958369" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.14</title>
+      <pubDate>Sun, 19 Jul 2026 14:41:24 +0000</pubDate>
+      <sparkle:version>202607191440</sparkle:version>
+      <sparkle:shortVersionString>3.1.14</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.14/SpaceNamer-3.1.14.dmg" sparkle:edSignature="X24raINeUa8zVLvjXekSMe2vlRdD56c2LSa/c7z7uLmvxODWI34NrjkoOa/mWB2sxXv6NTw5ARp813fLWpwiAw==" length="2995253" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.15</title>
+      <pubDate>Sun, 19 Jul 2026 14:51:22 +0000</pubDate>
+      <sparkle:version>202607191450</sparkle:version>
+      <sparkle:shortVersionString>3.1.15</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.15/SpaceNamer-3.1.15.dmg" sparkle:edSignature="k5aIE2qi+XPbWVL50fmJ679RuQIInDfj7QQ7fjgPdLHy+9sRACLOtrriJFsotlMrj1rFNEBt7DigJcDUTvpiDg==" length="2995398" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.16</title>
+      <pubDate>Sun, 19 Jul 2026 15:01:45 +0000</pubDate>
+      <sparkle:version>202607191500</sparkle:version>
+      <sparkle:shortVersionString>3.1.16</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.16/SpaceNamer-3.1.16.dmg" sparkle:edSignature="uF8LGq0JyG8HtpDH7Ok3Eis3Bn8/eA1XH1P1RTJl72bOG7HwHyAjnAgbuQZUN++618F5YYZV1zqSmyhoWJmqBQ==" length="2999410" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.17</title>
+      <pubDate>Sun, 19 Jul 2026 22:06:27 +0000</pubDate>
+      <sparkle:version>202607192205</sparkle:version>
+      <sparkle:shortVersionString>3.1.17</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.17/SpaceNamer-3.1.17.dmg" sparkle:edSignature="pf6zbmAGaRaZRYrhXicXj6VIVNkp7RID/I8aXoGbXiB6cwAMkeOhVgiWJJcqKAYAskVfTx51ZLt8DNKBJ7BcAA==" length="2987993" type="application/octet-stream"/>
+    </item>
+      <item>
+      <title>Version 3.1.18</title>
+      <pubDate>Sun, 19 Jul 2026 22:17:21 +0000</pubDate>
+      <sparkle:version>202607192216</sparkle:version>
+      <sparkle:shortVersionString>3.1.18</sparkle:shortVersionString>
+      <enclosure url="https://github.com/isaachorowitz/spacenamer-releases/releases/download/v3.1.18/SpaceNamer-3.1.18.dmg" sparkle:edSignature="JH7KZJLUwJaF9P9nqgr25PIgaLyqH6tjUWfJioa1pt7A0Twj6+/BxzdSVxhY9GoUSaai0A3A5DmVTv+C5CnjBQ==" length="2982625" type="application/octet-stream"/>
+    </item>
+  </channel></rss>

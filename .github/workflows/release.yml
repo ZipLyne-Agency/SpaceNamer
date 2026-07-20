@@ -1,0 +1,68 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Numeric MAJOR.MINOR.PATCH version (must exceed the feed)
+        required: true
+        type: string
+      notes:
+        description: Release notes
+        required: false
+        default: Bug fixes and improvements
+        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up signing keychain
+        env:
+          BUILD_CERTIFICATE: ${{ secrets.BUILD_CERTIFICATE }}
+          CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+        run: |
+          printf '%s' "$BUILD_CERTIFICATE" | base64 -d > /tmp/devid.p12
+          security create-keychain -p ci ci.keychain
+          security default-keychain -s ci.keychain
+          security unlock-keychain -p ci ci.keychain
+          security import /tmp/devid.p12 -k ci.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k ci ci.keychain
+          rm /tmp/devid.p12
+
+      - name: Prepare notarization and Sparkle keys
+        env:
+          NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
+          SPARKLE_ED_KEY: ${{ secrets.SPARKLE_ED_KEY }}
+        run: |
+          printf '%s' "$NOTARY_KEY" > /tmp/AuthKey.p8
+          printf '%s' "$SPARKLE_ED_KEY" > /tmp/sparkle-ed.pem
+          chmod 600 /tmp/AuthKey.p8 /tmp/sparkle-ed.pem
+
+      - name: Build, notarize, release, and update feed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_NOTES: ${{ inputs.notes }}
+          SIGNING_IDENTITY: "Developer ID Application: ZipLyne LLC (DHGG5BA7J7)"
+          NOTARY_KEY_FILE: /tmp/AuthKey.p8
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+          SPARKLE_KEY_FILE: /tmp/sparkle-ed.pem
+        run: ./release.sh "$RELEASE_VERSION" "$RELEASE_NOTES"
+
+      - name: Remove temporary credentials
+        if: always()
+        run: rm -f /tmp/devid.p12 /tmp/AuthKey.p8 /tmp/sparkle-ed.pem
