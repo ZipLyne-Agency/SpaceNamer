@@ -34,6 +34,13 @@ Development builds are ad-hoc signed and written only to ignored `build/`.
 There is no Xcode project: `build.sh` invokes `swiftc` and embeds the vendored
 Sparkle 2.9.4 framework.
 
+On macOS 27 the Command Line Tools ship without the SwiftUI macro plugin, so
+`build.sh` fails on `@State` unless an older SDK is used:
+
+```bash
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk ./build.sh
+```
+
 ## Releases and updates
 
 The canonical repository, release assets, and Sparkle feed are all at
@@ -117,13 +124,20 @@ Control is open and its spaces bar is expanded to thumbnails, a click-through,
 non-activating window at `.screenSaver` level renders a pill with each named
 space's custom name exactly over the native label.
 
-- MC open/close is detected via `CGWindowList` (Dock's fullscreen window) — no
-  permissions needed.
-- Bar expansion is latched from the pointer entering the compact strip
-  (`NSEvent.mouseLocation`) so pills only appear while the bar is expanded.
-- Label geometry was measured empirically on macOS 26 (see comments in
-  `main.swift`): the expanded row is centered as a group with per-item spacing
-  that depends on the space count.
+- MC open/close is detected via `CGWindowList` — no permissions needed. On
+  macOS 26 and earlier that is the Dock's full-screen window; on macOS 27 the
+  Dock keeps such a window on screen permanently, so MC is detected through
+  WindowManager's "Spaces Bar" window instead (owner, layer and bounds only:
+  window names need Screen Recording permission).
+- Bar expansion: on macOS 27 the Spaces Bar window's height says whether the
+  thumbnails are shown (128pt collapsed, 244pt expanded). On earlier systems
+  it is latched from the pointer entering the compact strip
+  (`NSEvent.mouseLocation`), so pills only appear while the bar is expanded.
+- Label geometry was measured empirically on macOS 26 and again on macOS 27
+  (see comments in `main.swift`). On macOS 27 pills are drawn in both states:
+  over the collapsed "Desktop N" labels (sized from the Dock's localized label
+  text, so the row lines up in any language) and under the thumbnails once
+  the bar expands.
 - Names are keyed by space UUID, so pills follow their desktop when you reorder
   spaces in Mission Control (verified live).
 

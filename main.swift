@@ -221,57 +221,93 @@ final class SpaceObserver {
 // space list. The windows are transparent, click-through, and float above
 // the MC window at .screenSaver level.
 
-struct OverlayPill {
+struct OverlayPill: Equatable {
     let text: String
     let isCurrent: Bool
     let center: CGPoint    // view coords, AppKit bottom-left origin
     let minCover: CGFloat  // native label extent underneath — never leave it peeking out
     let maxWidth: CGFloat  // cap so pills never cover a neighbor label
+    var compact: Bool = false // collapsed strip on macOS 27: tighter, smaller type
+}
+
+/// One label chip, styled after Mission Control's own labels on macOS 27:
+/// a rounded, blurred, translucent capsule with white medium text. The blur
+/// smears the native label underneath and the tint hides what is left, so
+/// the chip reads as the label itself rather than a sticker on top.
+final class OverlayChip: NSView {
+    private let blur = NSVisualEffectView()
+    private let tint = NSView()
+    private let label = NSTextField(labelWithString: "")
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layer?.cornerRadius = 7
+        layer?.cornerCurve = .continuous
+        layer?.masksToBounds = true
+        blur.material = .hudWindow
+        blur.blendingMode = .behindWindow
+        blur.state = .active
+        blur.appearance = NSAppearance(named: .darkAqua)
+        tint.wantsLayer = true
+        label.alignment = .center
+        label.lineBreakMode = .byClipping
+        label.textColor = .white
+        label.appearance = NSAppearance(named: .darkAqua)
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.45)
+        shadow.shadowBlurRadius = 2
+        shadow.shadowOffset = NSSize(width: 0, height: -0.5)
+        label.shadow = shadow
+        addSubview(blur); addSubview(tint); addSubview(label)
+    }
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(_ pill: OverlayPill) {
+        let font = NSFont.systemFont(ofSize: pill.compact ? 12 : 13, weight: .medium)
+        let pad: CGFloat = pill.compact ? 14 : 20
+        var text = pill.text
+        var size = (text as NSString).size(withAttributes: [.font: font])
+        while text.count > 1, size.width > pill.maxWidth - pad {
+            text = String(text.dropLast(text.hasSuffix("…") ? 2 : 1)) + "…"
+            size = (text as NSString).size(withAttributes: [.font: font])
+        }
+        let w = min(max(size.width + pad, pill.minCover), max(pill.maxWidth, 40))
+        let h: CGFloat = pill.compact ? 22 : 24
+        frame = NSRect(x: (pill.center.x - w / 2).rounded(), y: (pill.center.y - h / 2).rounded(),
+                       width: w.rounded(), height: h)
+        blur.frame = bounds
+        tint.frame = bounds
+        tint.layer?.backgroundColor = pill.isCurrent
+            ? NSColor(white: 1, alpha: 0.26).cgColor
+            : NSColor(white: 0, alpha: 0.38).cgColor
+        layer?.borderWidth = pill.isCurrent ? 0.5 : 0
+        layer?.borderColor = NSColor(white: 1, alpha: 0.35).cgColor
+        label.font = font
+        label.stringValue = text
+        label.frame = NSRect(x: 0, y: (h - size.height) / 2 - 0.5, width: w, height: size.height)
+    }
 }
 
 final class OverlayLabelView: NSView {
+    private var chips: [OverlayChip] = []
     var pills: [OverlayPill] = [] {
-        didSet { needsDisplay = true }
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        // Native Mission Control label styling: 13pt regular system text in a
-        // rounded rect (radius ~6, height ~22). The current space wears the
-        // system's gray selection; everything else sits on a near-strip dark
-        // so the pill reads as the label itself, not a sticker on top.
-        let font = NSFont.systemFont(ofSize: 13)
-        for pill in pills {
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: font,
-                .foregroundColor: NSColor.white,
-            ]
-            var text = pill.text
-            var size = (text as NSString).size(withAttributes: attrs)
-            while text.count > 1, size.width > pill.maxWidth - 20 {
-                text = String(text.dropLast(text.hasSuffix("…") ? 2 : 1)) + "…"
-                size = (text as NSString).size(withAttributes: attrs)
+        didSet {
+            guard pills != oldValue else { return }
+            while chips.count > pills.count { chips.removeLast().removeFromSuperview() }
+            while chips.count < pills.count {
+                let c = OverlayChip(frame: .zero)
+                addSubview(c); chips.append(c)
             }
-            let pillW = min(max(size.width + 20, pill.minCover), max(pill.maxWidth, 40))
-            let pillH: CGFloat = 24
-            let rect = NSRect(
-                x: pill.center.x - pillW / 2,
-                y: pill.center.y - pillH / 2,
-                width: pillW,
-                height: pillH
-            )
-            // Fully opaque: the native label underneath must never show through.
-            let bg = pill.isCurrent
-                ? NSColor(white: 0.32, alpha: 1.0)
-                : NSColor(white: 0.13, alpha: 1.0)
-            bg.setFill()
-            NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6).fill()
-            let textRect = NSRect(
-                x: pill.center.x - size.width / 2,
-                y: pill.center.y - size.height / 2,
-                width: size.width,
-                height: size.height
-            )
-            (text as NSString).draw(in: textRect, withAttributes: attrs)
+            for (c, p) in zip(chips, pills) { c.configure(p) }
+            // Fade the whole set in when labels (re)appear, instead of popping.
+            if oldValue.isEmpty, !pills.isEmpty {
+                alphaValue = 0
+                NSAnimationContext.runAnimationGroup { ctx in
+                    ctx.duration = 0.18
+                    animator().alphaValue = 1
+                }
+            }
         }
     }
 }
@@ -294,6 +330,24 @@ final class MCOverlayController {
     private var collapsedRects: [NSScreen: [CGRect]] = [:]
     private var lastAXRead = Date.distantPast
     private var lastSpacesRefresh = Date.distantPast
+    /// macOS 27+: Mission Control is drawn by WindowManager, whose "Spaces
+    /// Bar" window tells us both that MC is open and whether the bar is
+    /// expanded (its height changes). nil on older systems, where the
+    /// Dock-owned MC window and the hover latch are used instead.
+    private var spacesBar: SpacesBarWindow?
+    /// Last few Spaces Bar heights (one per tick). The bar animates between
+    /// its collapsed and expanded sizes; pills are only placed once it has
+    /// held the same height for a few ticks, so they never chase the animation.
+    private var barHeights: [CGFloat] = []
+    private var barSettled = false
+    /// Height of the Spaces Bar when it first appeared for this Mission
+    /// Control session: collapsed (128) when opened normally, expanded (244)
+    /// when the pointer was already at the top edge. Mission Control lays the
+    /// thumbnails out differently in the two cases (see windowManagerPills).
+    private var barFirstHeight: CGFloat?
+    /// macOS 27: the native items of the Spaces Bar read from WindowManager's
+    /// AX tree (centre x and label text), when Accessibility is granted.
+    private var axItems: [SpacesBarItem]? = nil
     /// Called at most every 0.3s while the overlay is visible — re-reads the
     /// CGS space list so pills track reorders quickly.
     var onTick: (() -> Void)?
@@ -357,7 +411,8 @@ final class MCOverlayController {
     }
 
     private func tick() {
-        let open = isEnabled && Self.missionControlIsOpen()
+        let bar = isEnabled ? Self.spacesBarWindow() : nil
+        let open = isEnabled && (bar != nil || Self.missionControlIsOpen())
         if open && !overlayVisible {
             overlayVisible = true
             expanded = false
@@ -368,28 +423,50 @@ final class MCOverlayController {
         } else if !open && overlayVisible {
             overlayVisible = false
             expanded = false
+            spacesBar = nil
+            barHeights = []
+            barSettled = false
+            barFirstHeight = nil
+            axItems = nil
             collapsedRects = [:]
             schedule(idleInterval)
             hide()
         }
         guard overlayVisible else { return }
 
-        // Latch bar expansion: pointer entering the compact strip (~top 36pt)
-        // expands it to thumbnails. Matching Dock's hover zone keeps the
-        // hardcoded-geometry pills hidden whenever the bar isn't expanded.
-        if !expanded {
-            let mouse = NSEvent.mouseLocation
-            if let screen = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) }),
-               mouse.y > screen.frame.maxY - 36 {
-                expanded = true
+        spacesBar = bar
+        if let bar {
+            // macOS 27+: the bar's own height says whether it is expanded
+            // (measured: 128pt collapsed, 244pt with thumbnails), so no
+            // hover latch and no AX read are needed.
+            expanded = bar.height > 180
+            if barFirstHeight == nil { barFirstHeight = bar.height }
+            barHeights.append(bar.height)
+            if barHeights.count > 3 { barHeights.removeFirst() }
+            barSettled = barHeights.count == 3 && barHeights.allSatisfy { $0 == bar.height }
+            if barSettled, Date().timeIntervalSince(lastAXRead) > 0.25 {
+                axItems = Self.spacesBarAXItems()
+                lastAXRead = Date()
             }
-        }
+        } else {
+            barSettled = true
+            // Latch bar expansion: pointer entering the compact strip (~top 36pt)
+            // expands it to thumbnails. Matching Dock's hover zone keeps the
+            // hardcoded-geometry pills hidden whenever the bar isn't expanded.
+            if !expanded {
+                let mouse = NSEvent.mouseLocation
+                if let screen = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) }),
+                   mouse.y > screen.frame.maxY - 36 {
+                    expanded = true
+                }
+            }
 
-        // Collapsed-state geometry from the Dock's AX tree; re-read sparingly —
-        // the strip is static while collapsed (reorders require expanding it).
-        if !expanded, Date().timeIntervalSince(lastAXRead) > 0.25 {
-            collapsedRects = Self.collapsedLabelRects() ?? [:]
-            lastAXRead = Date()
+            // Collapsed-state geometry from the Dock's AX tree; re-read sparingly —
+            // the strip is static while collapsed (reorders require expanding it).
+            if !expanded, Date().timeIntervalSince(lastAXRead) > 0.25 {
+                collapsedRects = Self.collapsedLabelRects() ?? [:]
+                lastAXRead = Date()
+            }
         }
 
         if Date().timeIntervalSince(lastSpacesRefresh) > 0.3 {
@@ -476,7 +553,56 @@ final class MCOverlayController {
         return found
     }
 
+    /// Mission Control's spaces bar as seen in the on-screen window list.
+    /// `frame` is in CG coordinates (top-left origin, global).
+    struct SpacesBarWindow {
+        let frame: CGRect
+        var height: CGFloat { frame.height }
+    }
+
+    /// macOS 27+: Mission Control belongs to the WindowManager process, which
+    /// puts a "Spaces Bar" window on screen (layer 14, full screen width,
+    /// hugging the top edge) for the strip and an "ExposeShieldWindow"
+    /// (layer 19, full screen) behind the thumbnails. Both vanish the instant
+    /// MC closes. Verified on macOS 27.0.1 (26A434): collapsed bar 128pt
+    /// high, expanded (thumbnails) 244pt.
+    ///
+    /// Window *names* are deliberately not used: `kCGWindowName` of other
+    /// processes is only filled in with Screen Recording permission, which
+    /// SpaceNamer does not ask for. Owner name, layer and bounds are enough.
+    static func spacesBarWindow() -> SpacesBarWindow? {
+        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] else { return nil }
+        guard let primary = NSScreen.screens.first else { return nil }
+        for w in list {
+            guard (w[kCGWindowOwnerName as String] as? String) == "WindowManager",
+                  (w[kCGWindowLayer as String] as? Int) == 14,
+                  let b = w[kCGWindowBounds as String] as? [String: Any],
+                  let x = b["X"] as? CGFloat, let y = b["Y"] as? CGFloat,
+                  let width = b["Width"] as? CGFloat, let height = b["Height"] as? CGFloat,
+                  height > 60, height < 500
+            else { continue }
+            // Full width of the screen it sits on, flush with that screen's top.
+            let screen = NSScreen.screens.first { s in
+                let top = primary.frame.maxY - s.frame.maxY // CG y of this screen's top
+                return abs(s.frame.origin.x - x) < 2 && abs(top - y) < 2
+            }
+            guard let screen, abs(screen.frame.width - width) < 2 else { continue }
+            return SpacesBarWindow(frame: CGRect(x: x, y: y, width: width, height: height))
+        }
+        return nil
+    }
+
+    /// Legacy detector (macOS 26 and earlier): Mission Control is a
+    /// full-screen window owned by the Dock at layer 20.
+    ///
+    /// Not used on macOS 27+: there the Dock keeps a permanent full-screen
+    /// window at layer 20 (the desktop/widgets layer) whether or not MC is
+    /// open, so this check is always true. Matching it made the overlay stick
+    /// on screen for good, with pills landing over ordinary windows as soon
+    /// as the pointer touched the menu bar. MC is drawn by WindowManager on
+    /// those systems and is found through `spacesBarWindow()` instead.
     static func missionControlIsOpen() -> Bool {
+        if #available(macOS 27, *) { return false }
         guard let dock = NSWorkspace.shared.runningApplications.first(where: {
             $0.bundleIdentifier == "com.apple.dock"
         }) else { return false }
@@ -555,6 +681,15 @@ final class MCOverlayController {
             let ordered = displaySpaces.sorted { $0.positionOnDisplay < $1.positionOnDisplay }
             let named = ordered.filter { $0.customName != nil }
 
+            if let bar = spacesBar {
+                guard barSettled else { v.pills = []; continue }
+                v.pills = Self.windowManagerPills(bar: bar, screen: screen, ordered: ordered,
+                                                  named: named, expanded: expanded,
+                                                  expandedFromHover: expanded && (barFirstHeight ?? 0) < 180,
+                                                  axItems: axItems)
+                continue
+            }
+
             guard expanded else {
                 // Bar still collapsed (no hover yet): cover each native
                 // "Desktop N" label with a pill at its exact AX frame.
@@ -604,6 +739,170 @@ final class MCOverlayController {
             }
             v.pills = out
         }
+    }
+
+    // MARK: macOS 27+ geometry (WindowManager's Spaces Bar)
+    //
+    // Measured on macOS 27.0.1, 1728×1117pt built-in display, 6 desktops,
+    // from screen captures with and without hover:
+    //  - collapsed bar (window 128pt high): "Desktop N" labels sit on one
+    //    row centred at 52pt from the top of the screen, each label as wide
+    //    as its text plus ~22pt, with ~8pt between labels, the whole row
+    //    centred on the screen (the + button is outside the row).
+    //  - expanded bar (window 244pt high): thumbnails 93pt high (149pt wide
+    //    on this aspect ratio) spaced 170pt apart, labels centred 71pt above
+    //    the bottom of the bar; the row is centred on the screen when the bar
+    //    opens expanded, and shifted half a slot left when it expands from a
+    //    hover over the collapsed strip.
+    // Other desktop counts are extrapolated (the row shrinks to fit).
+    // The native label text is the Dock's localized "Desktop %@" ("Bureau 3"
+    // in French), which is what the pill has to cover.
+    /// The text Mission Control itself draws under a space: the Dock's
+    /// localized "Desktop %@" for a desktop, the app name for a full-screen
+    /// space. Falls back to the English `defaultName`.
+    private static let desktopFormat: String = {
+        // `localizedString(forKey:)` on another app's bundle follows *this*
+        // app's localization (English), not the user's language, so the
+        // matching .lproj is picked by hand from the user's language list.
+        let fallback = "Desktop %@"
+        guard let dock = Bundle(path: "/System/Library/CoreServices/Dock.app") else { return fallback }
+        let locs = Bundle.preferredLocalizations(from: dock.localizations,
+                                                 forPreferences: Locale.preferredLanguages)
+        for loc in locs + ["en", "Base"] {
+            guard let path = dock.path(forResource: "Localizable", ofType: "strings",
+                                       inDirectory: nil, forLocalization: loc),
+                  let dict = NSDictionary(contentsOfFile: path),
+                  let f = dict["DesktopNum"] as? String, f.contains("%@")
+            else { continue }
+            return f
+        }
+        return fallback
+    }()
+
+    struct SpacesBarItem { let x: CGFloat; let title: String }
+
+    /// macOS 27+: with Accessibility granted, WindowManager exposes the
+    /// Spaces Bar as an AXGroup titled "Spaces Bar" holding an AXList with
+    /// one AXButton per space (title = the native label, e.g. "Bureau 3";
+    /// description "exit to …") plus the "add desktop" button. The buttons'
+    /// AXPosition.x is the item's centre in both the collapsed and the
+    /// expanded layout (checked against screen captures: 660, 740, 821…
+    /// collapsed; 435, 607, 778… expanded on a 1728pt-wide screen). Their
+    /// reported size (169×129) and y do not follow the layout, so only x and
+    /// the title are used. Returns nil without Accessibility or when the bar
+    /// is not in the tree, and the caller falls back to measured geometry.
+    private static func spacesBarAXItems() -> [SpacesBarItem]? {
+        guard WorkspaceEngine.accessibilityTrusted(prompt: false),
+              let wm = NSWorkspace.shared.runningApplications.first(where: {
+                  $0.bundleIdentifier == "com.apple.WindowManager" || $0.localizedName == "WindowManager"
+              }) else { return nil }
+        var queue = axChildren(AXUIElementCreateApplication(wm.processIdentifier))
+        var visited = 0
+        while !queue.isEmpty, visited < 200 {
+            let el = queue.removeFirst()
+            visited += 1
+            let role: String? = axAttr(el, kAXRoleAttribute as String)
+            guard role == "AXGroup" else { continue }
+            let title: String? = axAttr(el, kAXTitleAttribute as String)
+            guard title == "Spaces Bar" else { queue.append(contentsOf: axChildren(el)); continue }
+            var items: [SpacesBarItem] = []
+            for list in axChildren(el) {
+                for b in axChildren(list) {
+                    let r: String? = axAttr(b, kAXRoleAttribute as String)
+                    let t: String? = axAttr(b, kAXTitleAttribute as String)
+                    guard r == "AXButton", let t, !t.isEmpty, let f = axFrame(b) else { continue }
+                    items.append(SpacesBarItem(x: f.origin.x, title: t))
+                }
+            }
+            return items.isEmpty ? nil : items.sorted { $0.x < $1.x }
+        }
+        return nil
+    }
+
+    private static func nativeLabel(_ s: Space) -> String {
+        if s.isFullScreen { return s.defaultName }
+        return desktopFormat.replacingOccurrences(of: "%@", with: String(s.desktopNumber))
+    }
+
+    private static func windowManagerPills(bar: SpacesBarWindow, screen: NSScreen,
+                                           ordered: [Space], named: [Space],
+                                           expanded: Bool, expandedFromHover: Bool,
+                                           axItems: [SpacesBarItem]?) -> [OverlayPill] {
+        // The bar lives on one screen; draw nothing on the others.
+        guard let primary = NSScreen.screens.first else { return [] }
+        let cgTop = primary.frame.maxY - screen.frame.maxY
+        guard abs(bar.frame.origin.y - cgTop) < 2,
+              abs(bar.frame.origin.x - screen.frame.origin.x) < 2 else { return [] }
+
+        let W = screen.frame.width
+        let H = screen.frame.height
+        let n = ordered.count
+        guard n > 0 else { return [] }
+        let font = NSFont.systemFont(ofSize: 13)
+        func textWidth(_ s: String) -> CGFloat {
+            (s as NSString).size(withAttributes: [.font: font]).width
+        }
+        var out: [OverlayPill] = []
+        let yCollapsed = H - bar.height * (52.0 / 128.0)
+        let yExpanded = H - (bar.height - 71)
+
+        // Exact positions from the AX tree whenever it lists one item per
+        // space on this display; everything below is the fallback.
+        if let items = axItems, items.count == n {
+            let xs = items.map { $0.x - screen.frame.origin.x }
+            let spacing = zip(xs.dropFirst(), xs).map { $0 - $1 }.min() ?? 200
+            for s in named {
+                guard let i = ordered.firstIndex(where: { $0.uuid == s.uuid }) else { continue }
+                let nativeW = textWidth(items[i].title) + (expanded ? 30 : 22)
+                out.append(OverlayPill(text: s.customName!, isCurrent: s.isCurrent,
+                                       center: CGPoint(x: xs[i], y: expanded ? yExpanded : yCollapsed),
+                                       minCover: min(nativeW, spacing - 6), maxWidth: spacing - 6,
+                                       compact: !expanded))
+            }
+            return out
+        }
+
+        if !expanded {
+            let widths = ordered.map { textWidth(nativeLabel($0)) + 22 }
+            let gap: CGFloat = 8
+            let rowW = widths.reduce(0, +) + gap * CGFloat(n - 1)
+            var x = (W - rowW) / 2
+            let y = yCollapsed
+            var centers: [CGFloat] = []
+            for wdt in widths { centers.append(x + wdt / 2); x += wdt + gap }
+            for s in named {
+                guard let i = ordered.firstIndex(where: { $0.uuid == s.uuid }) else { continue }
+                out.append(OverlayPill(text: s.customName!, isCurrent: s.isCurrent,
+                                       center: CGPoint(x: centers[i], y: y),
+                                       minCover: widths[i] + 2, maxWidth: widths[i] + gap - 2,
+                                       compact: true))
+            }
+            return out
+        }
+
+        var thumbW = 93 * (W / H) + 5
+        var dx = thumbW + 21
+        let available = W * 0.9
+        if CGFloat(n) * dx > available {
+            let k = available / (CGFloat(n) * dx)
+            thumbW *= k; dx *= k
+        }
+        // Measured: when Mission Control opens with the pointer already at the
+        // top edge, the thumbnails row is centred (6 desktops: centres at
+        // 436, 607, …); when the bar expands later because the pointer
+        // entered the collapsed strip, the whole row sits half a slot
+        // further left (350, 521, …), as if laid out for one more item.
+        var x0 = (W - CGFloat(n - 1) * dx) / 2
+        if expandedFromHover { x0 -= dx / 2 }
+        let y = yExpanded
+        for s in named {
+            guard let i = ordered.firstIndex(where: { $0.uuid == s.uuid }) else { continue }
+            let nativeW = textWidth(nativeLabel(ordered[i])) + 30
+            out.append(OverlayPill(text: s.customName!, isCurrent: s.isCurrent,
+                                   center: CGPoint(x: x0 + CGFloat(i) * dx, y: y),
+                                   minCover: min(nativeW, dx - 8), maxWidth: dx - 8))
+        }
+        return out
     }
 
     private func screenID(for screen: NSScreen) -> String? {
